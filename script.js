@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const spreadsheet = document.getElementById("spreadsheet");
-    let table = createTable(10, 10); // Initial 10x10 grid
+    let table = createTable(100, 100); // Initial 10x10 grid
     spreadsheet.appendChild(table);
 
     let isSelecting = false, isDragging = false;
@@ -37,14 +37,30 @@ document.addEventListener("DOMContentLoaded", () => {
         return t;
     }
 
-    // **Column to Number**
+    // **Utility Functions**
     function colToNum(col) {
         return col.charCodeAt(0) - 64;
     }
 
-    // **Number to Column**
     function numToCol(num) {
         return String.fromCharCode(64 + num);
+    }
+
+    function getRangeCells(start, end) {
+        const startCol = colToNum(start.match(/[A-Z]+/)[0]);
+        const startRow = parseInt(start.match(/\d+/)[0]);
+        const endCol = colToNum(end.match(/[A-Z]+/)[0]);
+        const endRow = parseInt(end.match(/\d+/)[0]);
+        const cells = [];
+        for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
+            const row = [];
+            for (let j = Math.min(startCol, endCol); j <= Math.max(startCol, endCol); j++) {
+                const cell = document.querySelector(`td[data-row="${i}"][data-col="${numToCol(j)}"]`);
+                if (cell) row.push(cell);
+            }
+            cells.push(row);
+        }
+        return cells;
     }
 
     // **Selection Handling**
@@ -152,6 +168,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     } else {
                         targetCell.textContent = value;
                     }
+                    Object.assign(targetCell.style, getCellStyles(sourceCell));
+                    targetCell.classList.remove("numeric", "date");
+                    if (sourceCell.classList.contains("numeric")) targetCell.classList.add("numeric");
+                    if (sourceCell.classList.contains("date")) targetCell.classList.add("date");
                 }
             }
         }
@@ -161,6 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return formula.replace(/([A-Z]+)(\d+)/g, (match, col, row) => {
             const newCol = colToNum(col) + colOffset;
             const newRow = parseInt(row) + rowOffset;
+            if (newCol < 1 || newRow < 1) return "#REF!";
             return `${numToCol(newCol)}${newRow}`;
         });
     }
@@ -212,6 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
             tr.appendChild(td);
         }
         table.appendChild(tr);
+        updateTable();
     });
 
     document.getElementById("delete-row-btn").addEventListener("click", () => {
@@ -231,6 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
             td.dataset.col = numToCol(cols + 1);
             table.rows[i].appendChild(td);
         }
+        updateTable();
     });
 
     document.getElementById("delete-col-btn").addEventListener("click", () => {
@@ -242,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // **Formula Input and Evaluation**
+    // **Formula Handling**
     const formulaInput = document.getElementById("formula-input");
     table.addEventListener("click", (e) => {
         if (e.target.tagName === "TD") {
@@ -261,6 +284,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     table.addEventListener("input", (e) => {
         if (e.target.tagName === "TD") {
+            if (e.target.classList.contains("numeric") && !/^\d*\.?\d*$/.test(e.target.textContent)) {
+                e.target.textContent = "";
+                alert("Only numbers allowed in numeric cells");
+                return;
+            }
+            if (e.target.classList.contains("date") && !isValidDate(e.target.textContent)) {
+                e.target.textContent = "";
+                alert("Invalid date format (use YYYY-MM-DD)");
+                return;
+            }
             evaluateCell(e.target);
             updateDependencies(e.target);
         }
@@ -271,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!value.startsWith("=")) return;
         const formula = value.slice(1).toUpperCase();
         const rangeMatch = formula.match(/\((.*?)\)/);
-        let result = "Invalid formula";
+        let result = "#ERROR";
 
         if (rangeMatch) {
             const [start, end] = rangeMatch[1].split(":");
@@ -279,14 +312,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const func = formula.split("(")[0];
             switch (func) {
                 case "SUM": result = values.reduce((a, b) => a + b, 0); break;
-                case "AVERAGE": result = values.reduce((a, b) => a + b, 0) / values.length; break;
+                case "AVERAGE": result = values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0; break;
                 case "MAX": result = Math.max(...values); break;
                 case "MIN": result = Math.min(...values); break;
-                case "COUNT": result = values.filter(v => !isNaN(v)).length; break;
-                default: result = "Invalid function";
+                case "COUNT": result = values.filter(v => !isNaN(v) && v !== 0).length; break;
+                default: result = "#NAME?";
             }
         }
-        cell.textContent = isNaN(result) ? result : result;
+        cell.textContent = isNaN(result) || !isFinite(result) ? result : result;
     }
 
     function getRangeValues(start, end, sourceCell) {
@@ -333,10 +366,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Apply via console: applyDataQualityFunction("TRIM")
+    document.getElementById("trim-btn").addEventListener("click", () => applyDataQualityFunction("TRIM"));
+    document.getElementById("upper-btn").addEventListener("click", () => applyDataQualityFunction("UPPER"));
+    document.getElementById("lower-btn").addEventListener("click", () => applyDataQualityFunction("LOWER"));
+
     document.getElementById("remove-duplicates-btn").addEventListener("click", () => {
-        const start = document.getElementById("start-cell").value;
-        const end = document.getElementById("end-cell").value;
+        if (!selectedMinCol || !selectedMaxCol || !selectedMinRow || !selectedMaxRow) {
+            alert("Please select a range first.");
+            return;
+        }
+        const start = numToCol(selectedMinCol) + selectedMinRow;
+        const end = numToCol(selectedMaxCol) + selectedMaxRow;
         const range = getRangeCells(start, end);
         const seen = new Set();
         const uniqueRows = [];
@@ -356,28 +396,19 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    function getRangeCells(start, end) {
-        const startCol = colToNum(start.match(/[A-Z]+/)[0]);
-        const startRow = parseInt(start.match(/\d+/)[0]);
-        const endCol = colToNum(end.match(/[A-Z]+/)[0]);
-        const endRow = parseInt(end.match(/\d+/)[0]);
-        const cells = [];
-        for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
-            const row = [];
-            for (let j = Math.min(startCol, endCol); j <= Math.max(startCol, endCol); j++) {
-                const cell = document.querySelector(`td[data-row="${i}"][data-col="${numToCol(j)}"]`);
-                if (cell) row.push(cell);
-            }
-            cells.push(row);
-        }
-        return cells;
-    }
-
     document.getElementById("find-replace-btn").addEventListener("click", () => {
-        const start = document.getElementById("start-cell").value;
-        const end = document.getElementById("end-cell").value;
+        if (!selectedMinCol || !selectedMaxCol || !selectedMinRow || !selectedMaxRow) {
+            alert("Please select a range first.");
+            return;
+        }
+        const start = numToCol(selectedMinCol) + selectedMinRow;
+        const end = numToCol(selectedMaxCol) + selectedMaxRow;
         const findText = document.getElementById("find-text").value;
         const replaceText = document.getElementById("replace-text").value;
+        if (!findText) {
+            alert("Please enter text to find.");
+            return;
+        }
         const range = getRangeCells(start, end);
         range.forEach(row => {
             row.forEach(cell => {
@@ -386,25 +417,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // **Data Validation**
-    table.addEventListener("input", (e) => {
-        if (e.target.classList.contains("numeric") && !/^\d*\.?\d*$/.test(e.target.textContent)) {
-            e.target.textContent = "";
-            alert("Only numbers allowed in numeric cells");
-        }
-        if (e.target.classList.contains("date") && !isValidDate(e.target.textContent)) {
-            e.target.textContent = "";
-            alert("Invalid date format (use YYYY-MM-DD)");
-        }
-    });
-
-    function setCellType(type) {
+    // **Data Validation and Cell Types**
+    document.getElementById("cell-type").addEventListener("change", (e) => {
+        const type = e.target.value;
         document.querySelectorAll("td.selected").forEach(cell => {
             cell.classList.remove("numeric", "date");
-            if (type === "numeric") cell.classList.add("numeric");
+            if (type === "number") cell.classList.add("numeric");
             if (type === "date") cell.classList.add("date");
+            // Validate existing content
+            if (type === "number" && !/^\d*\.?\d*$/.test(cell.textContent)) cell.textContent = "";
+            if (type === "date" && !isValidDate(cell.textContent)) cell.textContent = "";
         });
-    }
+    });
 
     function isValidDate(dateStr) {
         const regex = /^\d{4}-\d{2}-\d{2}$/;
@@ -413,25 +437,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return date.toISOString().startsWith(dateStr);
     }
 
-    // Example: setCellType("numeric") via console
-
-    // **Testing and Sample Data**
-    document.getElementById("load-sample-data").addEventListener("click", () => {
-        for (let i = 1; i <= 5; i++) {
-            const cell = document.querySelector(`td[data-row="1"][data-col="${numToCol(i)}"]`);
-            cell.textContent = i * 10;
-            setCellType("numeric");
-        }
-        document.querySelector('td[data-row="2"][data-col="A"]').textContent = "=SUM(A1:E1)";
-        evaluateCell(document.querySelector('td[data-row="2"][data-col="A"]'));
-    });
-
     // **Save/Load**
     document.getElementById("save-btn").addEventListener("click", () => {
         const data = {};
         document.querySelectorAll("td").forEach(cell => {
             const key = `${cell.dataset.col}${cell.dataset.row}`;
-            data[key] = { value: cell.textContent, styles: getCellStyles(cell) };
+            data[key] = {
+                value: cell.textContent,
+                styles: getCellStyles(cell),
+                type: cell.classList.contains("numeric") ? "number" : cell.classList.contains("date") ? "date" : "text"
+            };
         });
         localStorage.setItem("spreadsheet", JSON.stringify(data));
         alert("Spreadsheet saved!");
@@ -439,13 +454,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("load-btn").addEventListener("click", () => {
         const data = JSON.parse(localStorage.getItem("spreadsheet") || "{}");
-        for (const [key, { value, styles }] of Object.entries(data)) {
+        for (const [key, { value, styles, type }] of Object.entries(data)) {
             const col = key.match(/[A-Z]+/)[0];
             const row = key.match(/\d+/)[0];
             const cell = document.querySelector(`td[data-row="${row}"][data-col="${col}"]`);
             if (cell) {
                 cell.textContent = value;
                 Object.assign(cell.style, styles);
+                cell.classList.remove("numeric", "date");
+                if (type === "number") cell.classList.add("numeric");
+                if (type === "date") cell.classList.add("date");
                 if (value.startsWith("=")) evaluateCell(cell);
             }
         }
@@ -463,9 +481,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // **Chart Generation**
     document.getElementById("generate-chart").addEventListener("click", () => {
-        const start = document.getElementById("start-cell").value;
-        const end = document.getElementById("end-cell").value;
-        const values = getRangeValues(start, end, document.querySelector("td.selected") || table.rows[1].cells[1]);
+        if (!selectedMinCol || !selectedMaxCol || !selectedMinRow || !selectedMaxRow) {
+            alert("Please select a range first.");
+            return;
+        }
+        const start = numToCol(selectedMinCol) + selectedMinRow;
+        const end = numToCol(selectedMaxCol) + selectedMaxRow;
+        const values = getRangeValuesForChart(start, end);
         const ctx = document.getElementById("chart").getContext("2d");
         if (window.myChart) window.myChart.destroy();
         document.getElementById("chart").style.display = "block";
@@ -477,5 +499,36 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             options: { scales: { y: { beginAtZero: true } } }
         });
+    });
+
+    function getRangeValuesForChart(start, end) {
+        const startCol = colToNum(start.match(/[A-Z]+/)[0]);
+        const startRow = parseInt(start.match(/\d+/)[0]);
+        const endCol = colToNum(end.match(/[A-Z]+/)[0]);
+        const endRow = parseInt(end.match(/\d+/)[0]);
+        const values = [];
+        for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
+            for (let j = Math.min(startCol, endCol); j <= Math.max(startCol, endCol); j++) {
+                const cell = document.querySelector(`td[data-row="${i}"][data-col="${numToCol(j)}"]`);
+                if (cell) values.push(parseFloat(cell.textContent) || 0);
+            }
+        }
+        return values;
+    }
+
+    // **Testing with Sample Data**
+    document.getElementById("load-sample-data").addEventListener("click", () => {
+        for (let i = 1; i <= 5; i++) {
+            const cell = document.querySelector(`td[data-row="1"][data-col="${numToCol(i)}"]`);
+            if (cell) {
+                cell.textContent = i * 10;
+                cell.classList.add("numeric");
+            }
+        }
+        const sumCell = document.querySelector('td[data-row="2"][data-col="A"]');
+        if (sumCell) {
+            sumCell.textContent = "=SUM(A1:E1)";
+            evaluateCell(sumCell);
+        }
     });
 });

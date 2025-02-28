@@ -9,8 +9,8 @@
 </head>
 <body>
     <div class="toolbar">
-        <button id="bold-btn" title="Bold">B</button>
-        <button id="italic-btn" title="Italic">I</button>
+        <button id="bold-btn" title="Bold"><strong>B</strong></button>
+        <button id="italic-btn" title="Italic"><em>I</em></button>
         <select id="font-size">
             <option value="12">12px</option>
             <option value="14">14px</option>
@@ -21,8 +21,14 @@
         <button id="delete-row-btn">Delete Row</button>
         <button id="add-col-btn">Add Column</button>
         <button id="delete-col-btn">Delete Column</button>
-        <input type="text" id="start-cell" placeholder="Start (e.g., A1)" />
-        <input type="text" id="end-cell" placeholder="End (e.g., B2)" />
+        <select id="cell-type">
+            <option value="text">Text</option>
+            <option value="number">Number</option>
+            <option value="date">Date</option>
+        </select>
+        <button id="trim-btn">Trim</button>
+        <button id="upper-btn">Upper</button>
+        <button id="lower-btn">Lower</button>
         <button id="remove-duplicates-btn">Remove Duplicates</button>
         <input type="text" id="find-text" placeholder="Find" />
         <input type="text" id="replace-text" placeholder="Replace" />

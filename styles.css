@@ -11,11 +11,23 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
+    align-items: center;
 }
 
 .toolbar button, .toolbar input, .toolbar select {
     margin-right: 5px;
-    padding: 5px;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+#bold-btn {
+    font-weight: bold;
+}
+
+#italic-btn {
+    font-style: italic;
 }
 
 .formula-bar {
@@ -29,11 +41,12 @@ body {
     padding: 5px;
     border: 1px solid #ccc;
     outline: none;
+    font-family: inherit;
 }
 
 .spreadsheet {
     overflow: auto;
-    height: calc(100vh - 150px);
+    height: calc(100vh - 100px);
 }
 
 table {
@@ -50,9 +63,12 @@ td, th {
 }
 
 th {
-    background-color: #f1f1f1;
+    background-color: #f5f5f5;
     font-weight: bold;
     text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 td[contenteditable="true"]:focus {
@@ -60,19 +76,20 @@ td[contenteditable="true"]:focus {
 }
 
 td.selected {
-    background-color: #e0e0e0;
+    background-color: #e8f0fe;
+    border: 2px solid #1a73e8;
 }
 
 td.drag-target {
-    background-color: #d0d0d0;
+    background-color: #d0e0ff;
     border: 1px dashed #666;
+}
+
+.numeric {
+    text-align: right;
 }
 
 #chart {
     margin: 10px;
     display: none;
-}
-
-.numeric {
-    text-align: right;
 }
