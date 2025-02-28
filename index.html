@@ -5,46 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spreadsheet App</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/mathjs/lib/browser/math.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="toolbar">
-        <button id="bold-btn" title="Bold"><strong>B</strong></button>
-        <button id="italic-btn" title="Italic"><em>I</em></button>
+        <button id="undo-btn" title="Undo"><i class="fas fa-undo"></i></button>
+        <button id="redo-btn" title="Redo"><i class="fas fa-redo"></i></button>
+        <button id="bold-btn" title="Bold"><i class="fas fa-bold"></i></button>
+        <button id="italic-btn" title="Italic"><i class="fas fa-italic"></i></button>
         <select id="font-size">
             <option value="12">12px</option>
             <option value="14">14px</option>
             <option value="16">16px</option>
         </select>
-        <input type="color" id="font-color" value="#000000" />
-        <button id="add-row-btn">Add Row</button>
-        <button id="delete-row-btn">Delete Row</button>
-        <button id="add-col-btn">Add Column</button>
-        <button id="delete-col-btn">Delete Column</button>
+        <input type="color" id="font-color" value="#000000" title="Font Color" />
+        <input type="color" id="bg-color" value="#ffffff" title="Background Color" />
+        <button id="align-left-btn" title="Align Left"><i class="fas fa-align-left"></i></button>
+        <button id="align-center-btn" title="Align Center"><i class="fas fa-align-center"></i></button>
+        <button id="align-right-btn" title="Align Right"><i class="fas fa-align-right"></i></button>
+        <button id="add-row-btn" title="Add Row"><i class="fas fa-plus"></i> Row</button>
+        <button id="delete-row-btn" title="Delete Row"><i class="fas fa-minus"></i> Row</button>
+        <button id="add-col-btn" title="Add Column"><i class="fas fa-plus"></i> Col</button>
+        <button id="delete-col-btn" title="Delete Column"><i class="fas fa-minus"></i> Col</button>
         <select id="cell-type">
             <option value="text">Text</option>
             <option value="number">Number</option>
             <option value="date">Date</option>
+            <option value="dropdown">Dropdown</option>
         </select>
+        <input type="text" id="dropdown-options" placeholder="Comma-separated options" style="display: none;" />
         <button id="trim-btn">Trim</button>
         <button id="upper-btn">Upper</button>
         <button id="lower-btn">Lower</button>
         <button id="remove-duplicates-btn">Remove Duplicates</button>
         <input type="text" id="find-text" placeholder="Find" />
         <input type="text" id="replace-text" placeholder="Replace" />
-        <button id="find-replace-btn">Find and Replace</button>
-        <button id="load-sample-data">Load Sample Data</button>
-        <button id="save-btn">Save</button>
-        <button id="load-btn">Load</button>
-        <button id="generate-chart">Generate Chart</button>
+        <button id="find-replace-btn">Find & Replace</button>
+        <button id="load-sample-data" title="Load Sample Data"><i class="fas fa-file-import"></i></button>
+        <button id="save-btn" title="Save"><i class="fas fa-save"></i></button>
+        <button id="load-btn" title="Load"><i class="fas fa-upload"></i></button>
+        <button id="export-csv-btn" title="Export CSV"><i class="fas fa-download"></i></button>
+        <button id="import-csv-btn" title="Import CSV"><i class="fas fa-file-upload"></i></button>
+        <input type="file" id="csv-file" accept=".csv" style="display: none;" />
+        <button id="generate-chart" title="Generate Chart"><i class="fas fa-chart-bar"></i></button>
     </div>
     <div class="formula-bar">
-        <input type="text" id="formula-input" placeholder="Enter formula (e.g., =SUM(A1:A5))" />
+        <input type="text" id="formula-input" placeholder="Enter formula (e.g., =SUM(A1:A5) or =A1+B1)" />
     </div>
-    <div class="spreadsheet" id="spreadsheet">
-        <!-- Spreadsheet grid generated via JS -->
-    </div>
+    <div class="spreadsheet" id="spreadsheet"></div>
     <canvas id="chart" width="400" height="200"></canvas>
+    <div id="context-menu" class="context-menu">
+        <div class="menu-item" data-action="copy">Copy</div>
+        <div class="menu-item" data-action="paste">Paste</div>
+        <div class="menu-item" data-action="cut">Cut</div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
