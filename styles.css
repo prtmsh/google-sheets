@@ -1,0 +1,55 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+}
+
+.toolbar {
+    padding: 10px;
+    background-color: #f1f1f1;
+    border-bottom: 1px solid #ccc;
+}
+
+.toolbar button,
+.toolbar input {
+    margin-right: 5px;
+}
+
+.formula-bar {
+    padding: 5px;
+    background-color: #fff;
+    border-bottom: 1px solid #ccc;
+}
+
+#formula-input {
+    width: 100%;
+    padding: 5px;
+    border: none;
+    outline: none;
+}
+
+.spreadsheet {
+    overflow: auto;
+    height: calc(
+        100vh - 150px
+    ); /* Adjust for toolbar, formula bar, and chart */
+}
+
+table {
+    border-collapse: collapse;
+}
+
+td,
+th {
+    border: 1px solid #ccc;
+    padding: 5px;
+    min-width: 100px;
+    text-align: center;
+}
+
+th {
+    background-color: #f1f1f1;
+}
+
+#chart {
+    margin: 10px;
+}

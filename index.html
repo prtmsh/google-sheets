@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Spreadsheet App</title>
+        <link rel="stylesheet" href="styles.css" />
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body>
+        <div class="toolbar">
+            <button id="bold-btn">B</button>
+            <button id="italic-btn">I</button>
+            <input
+                type="text"
+                id="start-cell"
+                placeholder="Start cell (e.g., A1)"
+            />
+            <input
+                type="text"
+                id="end-cell"
+                placeholder="End cell (e.g., B2)"
+            />
+            <button id="remove-duplicates-btn">Remove Duplicates</button>
+            <input type="text" id="find-text" placeholder="Find" />
+            <input type="text" id="replace-text" placeholder="Replace" />
+            <button id="find-replace-btn">Find and Replace</button>
+            <button id="load-sample-data">Load Sample Data</button>
+            <button id="save-btn">Save</button>
+            <button id="load-btn">Load</button>
+            <button id="generate-chart">Generate Chart</button>
+        </div>
+        <div class="formula-bar">
+            <input type="text" id="formula-input" placeholder="Enter formula" />
+        </div>
+        <div class="spreadsheet">
+            <!-- Spreadsheet grid will be generated here -->
+        </div>
+        <canvas id="chart" width="400" height="200"></canvas>
+        <script src="script.js"></script>
+    </body>
+</html>
