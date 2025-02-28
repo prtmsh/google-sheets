@@ -1,42 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Spreadsheet App</title>
-        <link rel="stylesheet" href="styles.css" />
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    </head>
-    <body>
-        <div class="toolbar">
-            <button id="bold-btn">B</button>
-            <button id="italic-btn">I</button>
-            <input
-                type="text"
-                id="start-cell"
-                placeholder="Start cell (e.g., A1)"
-            />
-            <input
-                type="text"
-                id="end-cell"
-                placeholder="End cell (e.g., B2)"
-            />
-            <button id="remove-duplicates-btn">Remove Duplicates</button>
-            <input type="text" id="find-text" placeholder="Find" />
-            <input type="text" id="replace-text" placeholder="Replace" />
-            <button id="find-replace-btn">Find and Replace</button>
-            <button id="load-sample-data">Load Sample Data</button>
-            <button id="save-btn">Save</button>
-            <button id="load-btn">Load</button>
-            <button id="generate-chart">Generate Chart</button>
-        </div>
-        <div class="formula-bar">
-            <input type="text" id="formula-input" placeholder="Enter formula" />
-        </div>
-        <div class="spreadsheet">
-            <!-- Spreadsheet grid will be generated here -->
-        </div>
-        <canvas id="chart" width="400" height="200"></canvas>
-        <script src="script.js"></script>
-    </body>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spreadsheet App</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="toolbar">
+        <button id="bold-btn" title="Bold">B</button>
+        <button id="italic-btn" title="Italic">I</button>
+        <select id="font-size">
+            <option value="12">12px</option>
+            <option value="14">14px</option>
+            <option value="16">16px</option>
+        </select>
+        <input type="color" id="font-color" value="#000000" />
+        <button id="add-row-btn">Add Row</button>
+        <button id="delete-row-btn">Delete Row</button>
+        <button id="add-col-btn">Add Column</button>
+        <button id="delete-col-btn">Delete Column</button>
+        <input type="text" id="start-cell" placeholder="Start (e.g., A1)" />
+        <input type="text" id="end-cell" placeholder="End (e.g., B2)" />
+        <button id="remove-duplicates-btn">Remove Duplicates</button>
+        <input type="text" id="find-text" placeholder="Find" />
+        <input type="text" id="replace-text" placeholder="Replace" />
+        <button id="find-replace-btn">Find and Replace</button>
+        <button id="load-sample-data">Load Sample Data</button>
+        <button id="save-btn">Save</button>
+        <button id="load-btn">Load</button>
+        <button id="generate-chart">Generate Chart</button>
+    </div>
+    <div class="formula-bar">
+        <input type="text" id="formula-input" placeholder="Enter formula (e.g., =SUM(A1:A5))" />
+    </div>
+    <div class="spreadsheet" id="spreadsheet">
+        <!-- Spreadsheet grid generated via JS -->
+    </div>
+    <canvas id="chart" width="400" height="200"></canvas>
+    <script src="script.js"></script>
+</body>
 </html>
