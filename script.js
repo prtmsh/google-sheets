@@ -429,6 +429,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (e) {
             cell.textContent = e.message.startsWith("#") ? e.message : "#ERROR";
         }
+        return values;
     }
 
     function getRangeValues(start, end) {
