@@ -2,18 +2,18 @@ body {
     font-family: 'Roboto', Arial, sans-serif;
     margin: 0;
     overflow: hidden;
-    background-color: #f4f4f4;
+    background-color: #f5f5f5;
 }
 
 .toolbar {
     padding: 8px;
     background-color: #fff;
-    border-bottom: 1px solid #dadce0;
+    border-bottom: 1px solid #dfe1e5;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
     align-items: center;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .toolbar button, .toolbar input, .toolbar select {
@@ -23,25 +23,32 @@ body {
     cursor: pointer;
     background-color: #fff;
     font-size: 13px;
+    color: #202124;
 }
 
-.toolbar button:hover { background-color: #f1f3f4; }
-.toolbar select, .toolbar input[type="color"] { padding: 4px; }
+.toolbar button:hover {
+    background-color: #f8f9fa;
+}
+
+.toolbar select, .toolbar input[type="color"] {
+    padding: 4px;
+}
 
 .formula-bar {
     padding: 5px;
     background-color: #fff;
-    border-bottom: 1px solid #dadce0;
+    border-bottom: 1px solid #dfe1e5;
 }
 
 #formula-input {
     width: 100%;
     padding: 8px;
-    border: 1px solid #dadce0;
+    border: 1px solid #dfe1e5;
     border-radius: 4px;
-    font-family: inherit;
+    font-family: 'Roboto', Arial, sans-serif;
     font-size: 14px;
     outline: none;
+    box-sizing: border-box;
 }
 
 .spreadsheet {
@@ -63,6 +70,7 @@ td, th {
     text-align: left;
     cursor: cell;
     user-select: none;
+    background-color: #fff;
 }
 
 th {
@@ -72,7 +80,7 @@ th {
     position: sticky;
     top: 0;
     z-index: 2;
-    border-bottom: 2px solid #dadce0;
+    border-bottom: 2px solid #dfe1e5;
 }
 
 th.resizable {
@@ -92,6 +100,7 @@ th.resizable {
 td[contenteditable="true"]:focus {
     outline: 2px solid #1a73e8;
     background-color: #fff;
+    z-index: 1;
 }
 
 td.selected {
@@ -115,7 +124,7 @@ td.drag-target {
 .context-menu {
     position: absolute;
     background-color: #fff;
-    border: 1px solid #dadce0;
+    border: 1px solid #dfe1e5;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     display: none;
     z-index: 10;
@@ -126,9 +135,20 @@ td.drag-target {
     cursor: pointer;
 }
 
-.menu-item:hover { background-color: #f1f3f4; }
+.menu-item:hover {
+    background-color: #f8f9fa;
+}
 
 @media (max-width: 768px) {
-    .toolbar { flex-direction: column; align-items: flex-start; }
-    .spreadsheet { height: calc(100vh - 150px); }
+    .toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .spreadsheet {
+        height: calc(100vh - 150px);
+    }
+    td, th {
+        min-width: 60px;
+        padding: 2px 4px;
+    }
 }

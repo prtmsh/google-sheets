@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
             for (let j = 1; j <= cols; j++) {
                 const td = document.createElement("td");
                 td.setAttribute("contenteditable", "true");
+                td.setAttribute("tabindex", "0"); // Accessibility
                 td.dataset.row = i;
                 td.dataset.col = String.fromCharCode(64 + j);
                 tr.appendChild(td);
@@ -49,10 +50,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function numToCol(num) { return String.fromCharCode(64 + num); }
 
     function getRangeCells(start, end) {
-        const startCol = colToNum(start.match(/[A-Z]+/)[0]);
-        const startRow = parseInt(start.match(/\d+/)[0]);
-        const endCol = colToNum(end.match(/[A-Z]+/)[0]);
-        const endRow = parseInt(end.match(/\d+/)[0]);
+        const startMatch = start.match(/(\$?[A-Z]+)(\$?\d+)/);
+        const endMatch = end.match(/(\$?[A-Z]+)(\$?\d+)/);
+        const startCol = colToNum(startMatch[1].replace("$", ""));
+        const startRow = parseInt(startMatch[2].replace("$", ""));
+        const endCol = colToNum(endMatch[1].replace("$", ""));
+        const endRow = parseInt(endMatch[2].replace("$", ""));
         const cells = [];
         for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
             const row = [];
@@ -82,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function pushUndo() {
         undoStack.push(saveState());
         redoStack.length = 0;
-        if (undoStack.length > 50) undoStack.shift(); // Limit stack size
+        if (undoStack.length > 50) undoStack.shift();
     }
 
     function applyState(state) {
@@ -291,6 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
         for (let j = 1; j <= cols; j++) {
             const td = document.createElement("td");
             td.setAttribute("contenteditable", "true");
+            td.setAttribute("tabindex", "0");
             td.dataset.row = rows + 1;
             td.dataset.col = numToCol(j);
             tr.appendChild(td);
@@ -320,6 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
         for (let i = 1; i < table.rows.length; i++) {
             const td = document.createElement("td");
             td.setAttribute("contenteditable", "true");
+            td.setAttribute("tabindex", "0");
             td.dataset.row = i;
             td.dataset.col = numToCol(cols + 1);
             table.rows[i].appendChild(td);
@@ -366,7 +371,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (type === "date" && value && !isValidDate(value)) {
                 e.target.textContent = "";
-                alert("Invalid date format (use YYYY-MM-DD)");
+                alert("Invalid date (use YYYY-MM-DD, e.g., 2023-12-31)");
                 return;
             }
             if (type === "dropdown" && e.target.dataset.options) {
@@ -383,17 +388,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    function evaluateCell(cell) {
+    function evaluateCell(cell, visited = new Set()) {
         let value = cell.textContent.trim();
         if (!value.startsWith("=")) return;
         const formula = value.slice(1);
         const sourceKey = `${cell.dataset.col}${cell.dataset.row}`;
+
+        if (visited.has(sourceKey)) {
+            cell.textContent = "#CIRCULAR!";
+            return;
+        }
+        visited.add(sourceKey);
+
         dependencies.set(sourceKey, []);
 
         try {
-            const parsed = formula.replace(/([A-Z]+\d+)/g, (match) => {
-                const col = match.match(/[A-Z]+/)[0];
-                const row = match.match(/\d+/)[0];
+            const parsed = formula.replace(/(\$?[A-Z]+)(\$?\d+)/g, (match) => {
+                const col = match.match(/\$?[A-Z]+/)[0].replace("$", "");
+                const row = match.match(/\$?\d+/)[0].replace("$", "");
                 const refCell = document.querySelector(`td[data-row="${row}"][data-col="${col}"]`);
                 const refValue = refCell ? (parseFloat(refCell.textContent) || refCell.textContent || 0) : "#REF!";
                 dependencies.get(sourceKey).push(`${col}${row}`);
@@ -403,7 +415,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const funcMatch = formula.match(/^([A-Z]+)\((.*?)\)$/);
             if (funcMatch) {
                 const [, func, args] = funcMatch;
-                const rangeMatch = args.match(/([A-Z]+\d+):([A-Z]+\d+)/);
+                const rangeMatch = args.match(/(\$?[A-Z]+\$?\d+):(\$?[A-Z]+\$?\d+)/);
                 if (rangeMatch) {
                     const values = getRangeValues(rangeMatch[1], rangeMatch[2]);
                     switch (func.toUpperCase()) {
@@ -412,9 +424,17 @@ document.addEventListener("DOMContentLoaded", () => {
                         case "MAX": cell.textContent = Math.max(...values); break;
                         case "MIN": cell.textContent = Math.min(...values); break;
                         case "COUNT": cell.textContent = values.filter(v => !isNaN(v) && v !== "").length; break;
+                        case "MEDIAN": cell.textContent = math.median(values); break;
+                        case "STDEV": cell.textContent = math.std(values); break;
                         case "IF": {
                             const [cond, val1, val2] = args.split(",");
-                            cell.textContent = math.evaluate(cond) ? val1.trim() : val2.trim();
+                            const conditionResult = math.evaluate(cond.replace(/(\$?[A-Z]+\$?\d+)/g, (m) => {
+                                const col = m.match(/\$?[A-Z]+/)[0].replace("$", "");
+                                const row = m.match(/\$?\d+/)[0].replace("$", "");
+                                const cell = document.querySelector(`td[data-row="${row}"][data-col="${col}"]`);
+                                return cell ? (parseFloat(cell.textContent) || 0) : "#REF!";
+                            }));
+                            cell.textContent = conditionResult ? val1.trim() : val2.trim();
                             break;
                         }
                         default: cell.textContent = "#NAME?";
@@ -429,7 +449,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (e) {
             cell.textContent = e.message.startsWith("#") ? e.message : "#ERROR";
         }
-        return values;
     }
 
     function getRangeValues(start, end) {
@@ -478,7 +497,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const seen = new Set();
         const uniqueRows = [];
         range.forEach(row => {
-            const rowKey = row.map(cell => cell.textContent).join(",");
+            const rowKey = row.map(cell => cell.textContent || "").join(",");
             if (!seen.has(rowKey)) {
                 seen.add(rowKey);
                 uniqueRows.push(row.map(cell => cell.textContent));
@@ -511,6 +530,35 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // **Additional Mathematical Functions**
+    document.getElementById("median-btn").addEventListener("click", () => {
+        if (!selectedRange) {
+            alert("Please select a range first.");
+            return;
+        }
+        pushUndo();
+        const values = getRangeValues(`${numToCol(selectedRange.minCol)}${selectedRange.minRow}`, `${numToCol(selectedRange.maxCol)}${selectedRange.maxRow}`);
+        const targetCell = document.querySelector("td.selected");
+        if (targetCell) {
+            targetCell.textContent = `=MEDIAN(${numToCol(selectedRange.minCol)}${selectedRange.minRow}:${numToCol(selectedRange.maxCol)}${selectedRange.maxRow})`;
+            evaluateCell(targetCell);
+        }
+    });
+
+    document.getElementById("stdev-btn").addEventListener("click", () => {
+        if (!selectedRange) {
+            alert("Please select a range first.");
+            return;
+        }
+        pushUndo();
+        const values = getRangeValues(`${numToCol(selectedRange.minCol)}${selectedRange.minRow}`, `${numToCol(selectedRange.maxCol)}${selectedRange.maxRow}`);
+        const targetCell = document.querySelector("td.selected");
+        if (targetCell) {
+            targetCell.textContent = `=STDEV(${numToCol(selectedRange.minCol)}${selectedRange.minRow}:${numToCol(selectedRange.maxCol)}${selectedRange.maxRow})`;
+            evaluateCell(targetCell);
+        }
+    });
+
     // **Data Validation and Cell Types**
     const cellTypeSelect = document.getElementById("cell-type");
     const dropdownOptionsInput = document.getElementById("dropdown-options");
@@ -535,8 +583,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function isValidDate(dateStr) {
         const regex = /^\d{4}-\d{2}-\d{2}$/;
         if (!regex.test(dateStr)) return false;
-        const date = new Date(dateStr);
-        return date.toISOString().startsWith(dateStr);
+        const [year, month, day] = dateStr.split("-").map(Number);
+        const date = new Date(year, month - 1, day);
+        return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
     }
 
     // **Save/Load**
@@ -652,6 +701,29 @@ document.addEventListener("DOMContentLoaded", () => {
             sumCell.textContent = "=SUM(A1:E1)";
             evaluateCell(sumCell);
         }
+    });
+
+    document.getElementById("run-tests").addEventListener("click", () => {
+        pushUndo();
+        const tests = [
+            { cell: "A1", value: "10" },
+            { cell: "A2", value: "20" },
+            { cell: "A3", value: "30" },
+            { cell: "B1", value: "=SUM(A1:A3)" },
+            { cell: "B2", value: "=AVERAGE(A1:A3)" },
+            { cell: "B3", value: "=MEDIAN(A1:A3)" },
+            { cell: "C1", value: "=IF(A1>15, 'High', 'Low')" },
+        ];
+        tests.forEach(test => {
+            const col = test.cell.match(/[A-Z]+/)[0];
+            const row = test.cell.match(/\d+/)[0];
+            const cell = document.querySelector(`td[data-row="${row}"][data-col="${col}"]`);
+            if (cell) {
+                cell.textContent = test.value;
+                if (test.value.startsWith("=")) evaluateCell(cell);
+            }
+        });
+        alert("Test data loaded: Check A1:A3 for numbers, B1:B3 for functions, C1 for IF.");
     });
 
     // **Context Menu**
